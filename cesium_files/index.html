@@ -7,7 +7,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
   <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
-  <title>Hello World!</title>
+  <title>A Kicking Wheel's Amazing Landsat Imagery Viewer (data courtesy of GeoScience Australia)</title>
   <script src="../Build/Cesium/Cesium.js"></script>
   <style>
       @import url(../Build/Cesium/Widgets/widgets.css);
@@ -34,7 +34,18 @@
 <body>
   <div id="cesiumContainer"></div>
   <script>
-    var viewer = new Cesium.Viewer('cesiumContainer');
+    var viewer = new Cesium.Viewer('cesiumContainer', {
+                            sceneMode : Cesium.SceneMode.SCENE2D,
+                            baseLayerPicker : false,
+                            homeButton : false,
+                            infoBox : false,
+                            navigationHelpButton : false,
+                            navigationInstructionsInitiallyVisible : false,
+                            sceneModePicker : false, 
+                            imageryProvider : new Cesium.ArcGisMapServerImageryProvider({
+                                    url : 'http://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer'
+                            }),
+                        });
     var landsat_layers = new Cesium.ImageryLayerCollection();
     
     window.url_list1 = [ { url: 'landsat_images/LS5_TM_NBAR_P54_GANBAR01-002_095_082_19860817.png',
@@ -91,20 +102,20 @@
         viewer.clock.startTime = min_date;
         viewer.clock.currentTime = min_date;
         viewer.clock.stopTime = max_date;
+        viewer.clock.shouldAnimate = false;
         viewer.clock.multiplier = 10000000.0;
         viewer.timeline.updateFromClock();    
         viewer.timeline.zoomTo(viewer.clock.startTime, viewer.clock.stopTime);
     }
 
-    changeLandsatLayers(url_list1);
+    viewer.scene.camera.moveRight(1000000);
+    viewer.scene.camera.moveDown(1000000);
+    viewer.scene.camera.moveForward(100000);
+    viewer.scene.camera.zoomIn(100);
 
-    // Look at Australia: NE -28.157021, 153.638824. SW -37.505032, 140.999283.
-    var west = Cesium.Math.toRadians(108);
-    var south = Cesium.Math.toRadians(-37);
-    var east = Cesium.Math.toRadians(153);
-    var north = Cesium.Math.toRadians(-10);
-    var extent = new Cesium.Rectangle(west, south, east, north);
-    viewer.scene.camera.viewRectangle(extent, Cesium.Ellipsoid.WGS84);
+
+
+    changeLandsatLayers(url_list1);
 
     // Listen for time changes so that we can change imagery
     function timeChanged(event) {
