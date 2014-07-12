@@ -94,17 +94,21 @@ http://schemas.opengis.net/csw/2.0.2/CSW-discovery.xsd">
             upper_corner = result.find('ows:BoundingBox/ows:UpperCorner',
                 namespaces=namespaces
                 ).text
-            bounding_box = tuple(lower_corner.split(' ') + upper_corner.split(' '))
+
+            bounding_box_strs = lower_corner.split(' ') + upper_corner.split(' ')
+            #bounding_box = tuple([float(i) for i in bounding_box_strs])
+
+            bounding_box = (141.9368, -32.8835, 142.4735, -32.4970)
 
             print bounding_box
 
             img = service.getmap(
-                layers=['FalseColour741'], styles=['visual_bright'],
+                layers=['FalseColour741'], styles=[''],
                 srs='EPSG:4326', bbox=bounding_box, size=(1036, 746),
                 format='image/png'#, transparent=True
                 )
 
-            identifier = result.gind('dc:identifier', namespaces=namespaces)
+            identifier = result.find('dc:identifier', namespaces=namespaces).text
 
             out = open('%s.png' % identifier, 'wb')
             out.write(img.read())
