@@ -81,6 +81,18 @@
                         });
     var landsat_layers = new Cesium.ImageryLayerCollection();
 
+    function setupGoAgainButton() {
+      var toolbars = document.getElementsByClassName('cesium-viewer-toolbar');
+      var toolbar = toolbars[0];
+      var button = document.createElement('button');
+      button.className = 'cesium-button';
+      button.onclick = function() {
+          resetPostCodeForm();
+      };
+      button.textContent = 'Go Again!';
+      toolbar.appendChild(button);
+    }
+
     function startAnimate() {
       viewer.clock.shouldAnimate = true;
       viewer.timeline.updateFromClock();
@@ -95,6 +107,7 @@
             duration : 3.0,
             complete : startAnimate,
         });
+
     }
     
     var loading_messages = [
@@ -112,7 +125,7 @@
         console.log('in changeLandsatLayers');
         console.log(url_list);
         window.url_list1 = url_list;
-        var destroyRemovedLayers = true;
+        var destroyRemovedLayers = false;
         landsat_layers.removeAll(destroyRemovedLayers);
         var min_date = Cesium.JulianDate.fromIso8601("9999-01-25"); // Some time in the distant future
         var max_date = Cesium.JulianDate.fromIso8601("1500-01-25"); // Some time before landsat
@@ -198,10 +211,20 @@
     var polyfilter_scriptpath = '/js/';
     var postcode_re = /[0-9]{3,4}$/
 
-    $(document).ready(function() {
+    function resetPostCodeForm() {
       var modal = document.querySelector('#modal');
       classie.add(modal, 'md-show');
       classie.add(document.documentElement, 'md-effect-16');
+
+      $('#btn-go').show();
+      $('#msg-please-wait').hide();
+      $('#msg-loading').text('');
+      $('#postcode').focus();
+    }
+
+    $(document).ready(function() {
+      resetPostCodeForm();
+      setupGoAgainButton();
     });
 
     $(window).load(function() {
