@@ -104,7 +104,7 @@
       '...buckle your seat belts...',
       '...time systems - OK...',
       '...full speed ahead...',
-      '...its the journey that counts, not the destination...'
+      '...it\'s the journey that counts, not the destination...'
     ]
 
 
@@ -112,29 +112,12 @@
         console.log('in changeLandsatLayers');
         console.log(url_list);
         window.url_list1 = url_list;
-        var destroyRemovedLayers = true;
-        landsat_layers.removeAll(destroyRemovedLayers);
         var min_date = Cesium.JulianDate.fromIso8601("9999-01-25"); // Some time in the distant future
         var max_date = Cesium.JulianDate.fromIso8601("1500-01-25"); // Some time before landsat
 
         var finalBBox;
 
         for (var i=0; i<url_list.length; i++) {
-          something = url_list;
-          console.log(url_list[i]);
-            var rectangle = Cesium.Rectangle.fromDegrees(url_list[i]["bbox"][0],
-                                                        url_list[i]["bbox"][1],
-                                                        url_list[i]["bbox"][2],
-                                                        url_list[i]["bbox"][3]);
-
-            var landsat_layer = viewer.scene.imageryLayers.addImageryProvider(new Cesium.SingleTileImageryProvider({
-                url : url_list[i]["url"],
-                rectangle : rectangle
-            }));
-            landsat_layer.show = true;
-            landsat_layer.alpha = 0;
-            url_list[i]["layer"] = landsat_layer;
-            landsat_layers.add(landsat_layer);
 
             // Work out the date range the images cover, so that we can display only that range on the 
             // time slider.
@@ -149,10 +132,10 @@
 
             if(i == url_list.length - 1)
             {
-              finalBBox = url_list[i]["bbox"];
+                finalBBox = url_list[i]["bbox"];
             }
         }
-
+            
         viewer.timeline.addEventListener('settime', function(event) {
             timeChanged(event);
             });
@@ -167,13 +150,11 @@
         viewer.clock.stopTime = max_date;
         viewer.clock.shouldAnimate = false;
         viewer.clock.multiplier = 10000000.0;
-        viewer.timeline.updateFromClock();
+        viewer.timeline.updateFromClock();    
         viewer.timeline.zoomTo(viewer.clock.startTime, viewer.clock.stopTime);
 
         gotoRectangle(finalBBox);
     }
-
-    // changeLandsatLayers(url_list1);
 
     // Listen for time changes so that we can change imagery
     function timeChanged(event) {
@@ -186,9 +167,43 @@
             eps_test = 300.0;
             var clamped = Cesium.Math.clamp(eps, 0.0, eps_test);
             var normed = clamped/eps_test;
-            if (window.url_list1[i]["layer"])
+            window.url_list1[i]["alpha"] = 1 - normed;
+            if (window.url_list1[i]["active"] == undefined)
             {
-                window.url_list1[i]["layer"].alpha = 1 - normed;
+                window.url_list1[i]["active"] = false;
+                window.url_list1[i]["layer"] = undefined;
+            }
+
+            // Only create the layer when it's going to be visible, otherwise Cesium chokes on too many layers.
+            if (window.url_list1[i]["alpha"] > 0) {
+                // But only add it once, even though we're going to get here hundreds of times while the layer is visible.
+                if (window.url_list1[i]["active"] == false)
+                {
+                    var rectangle = Cesium.Rectangle.fromDegrees(window.url_list1[i]["bbox"][0],
+                                                                 window.url_list1[i]["bbox"][1],
+                                                                 window.url_list1[i]["bbox"][2],
+                                                                 window.url_list1[i]["bbox"][3]);
+                    var landsat_layer = viewer.scene.imageryLayers.addImageryProvider(new Cesium.SingleTileImageryProvider({
+                        url : window.url_list1[i]["url"],
+                        rectangle : rectangle
+                    }));
+                    window.url_list1[i]["layer"] = landsat_layer;
+                    window.url_list1[i]["active"] = true;
+                    window.landsat_layers.add(landsat_layer);
+                }
+                // But always update the alpha value, if there's a layer
+                if (window.url_list1[i]["layer"])
+                {
+                    window.url_list1[i]["layer"].alpha = window.url_list1[i]["alpha"];
+                }
+            } else // alpha is less than or equal to zero
+            {
+                // layer was visible, but is no longer. Remove it.
+                if (window.url_list1[i]["active"] == true) {
+                    window.landsat_layers.remove(window.url_list1[i]["layer"]);
+                }
+                // If alpha is zero, layer is always inactive. 
+                window.url_list1[i]["active"] == false;
             }
         }
     }
