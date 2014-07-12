@@ -2,12 +2,30 @@ import httplib, urllib
 import simplejson as json
 import xml.etree.ElementTree as ET
 from owslib.wms import WebMapService
+import utils
+import sys, os
 
 HOST_NAME = 'eos.ga.gov.au'
 HOST_PORT = 80
 HOST_PATH = '/geonetwork/srv/eng/csw'
 
-def get_records():
+# - lc
+# - uc
+
+#bounding_box = (141.9368, -32.8835, 142.4735, -32.4970)
+
+(149.118368, -35.271229, 150.118368, -35.771229)
+
+
+def get_records(post_code_for_bounding_box):
+
+    pc_info = utils.post_codes[int(post_code_for_bounding_box)]
+
+    print "Getting images for: %s - %s, %s" % (post_code_for_bounding_box, pc_info['suburb'], pc_info['state'])
+
+    lower_corner = '%s %s' % (pc_info['lon'], pc_info['lat'])
+    upper_corner = '%f %f' % (float(pc_info['lon']) + 1.0, float(pc_info['lat']) + 0.5)
+
     body = """<?xml version="1.0" encoding="UTF-8"?>
 <csw:GetRecords xmlns:gml="http://www.opengis.net/gml"
 xmlns:ogc="http://www.opengis.net/ogc"
@@ -30,8 +48,8 @@ http://schemas.opengis.net/csw/2.0.2/CSW-discovery.xsd">
 <ogc:BBOX>
 <ogc:PropertyName>ows:BoundingBox</ogc:PropertyName>
 <gml:Envelope>
-<gml:lowerCorner>141.9368 -32.8835</gml:lowerCorner>
-<gml:upperCorner>142.4735 -32.4970</gml:upperCorner>
+<gml:lowerCorner>""" + lower_corner + """</gml:lowerCorner> 
+<gml:upperCorner>""" + upper_corner + """</gml:upperCorner>
 </gml:Envelope>
 </ogc:BBOX>
 </ogc:And>
@@ -62,6 +80,8 @@ http://schemas.opengis.net/csw/2.0.2/CSW-discovery.xsd">
     conn.request('POST', request_path, body, headers)
     response = conn.getresponse()
 
+    print 'GetRecords: %d %s' % (response.status, response.reason)
+
     if response.status == 200:
         data = response.read()
         conn.close()
@@ -78,29 +98,19 @@ http://schemas.opengis.net/csw/2.0.2/CSW-discovery.xsd">
             )
 
         for result in results:
-            print result
             get_capabilities_response = result.find(
                 "dc:URI[@protocol='OGC:WMS-1.3.0-http-get-capabilities']",
                 namespaces=namespaces
                 )
             wms_url = get_capabilities_response.text
-            print wms_url
+            print 'Record URL: %s' % wms_url
 
             service = WebMapService(wms_url, version='1.1.1')
 
-            lower_corner = result.find('ows:BoundingBox/ows:LowerCorner',
-                namespaces=namespaces
-                ).text
-            upper_corner = result.find('ows:BoundingBox/ows:UpperCorner',
-                namespaces=namespaces
-                ).text
-
             bounding_box_strs = lower_corner.split(' ') + upper_corner.split(' ')
-            #bounding_box = tuple([float(i) for i in bounding_box_strs])
+            bounding_box = tuple([float(i) for i in bounding_box_strs])
 
-            bounding_box = (141.9368, -32.8835, 142.4735, -32.4970)
-
-            print bounding_box
+            print 'Bounding Box: ' + str(bounding_box)
 
             img = service.getmap(
                 layers=['FalseColour741'], styles=[''],
@@ -109,9 +119,17 @@ http://schemas.opengis.net/csw/2.0.2/CSW-discovery.xsd">
                 )
 
             identifier = result.find('dc:identifier', namespaces=namespaces).text
+            directory = 'landsat_images/%s' % pc_info['suburb']
 
-            out = open('%s.png' % identifier, 'wb')
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+
+            file_name = '%s/%s.png' % (directory, identifier)
+
+            print 'Writing file: %s' % file_name
+
+            out = open(file_name, 'wb')
             out.write(img.read())
             out.close()
 
-get_records()
+get_records(sys.argv[1])
