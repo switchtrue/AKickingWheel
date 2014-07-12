@@ -1,0 +1,10 @@
+#form-postcode p, #form-postcode input[type="text"] {
+  text-align: center;
+}
+
+#form-postcode input[type="text"] {
+  font-size: 1.5em;
+  width: 100%;
+  border: none;
+  background: rgba(256, 256, 256, 0.4);
+}

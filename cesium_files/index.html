@@ -8,6 +8,10 @@
   <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
   <title>Hello World!</title>
+  <link rel="stylesheet" href="landsat_resources/css/reset.css" type="text/css">
+  <link rel="stylesheet" href="landsat_resources/css/default.css" type="text/css" />
+  <link rel="stylesheet" href="landsat_resources/css/component.css" type="text/css" />
+  <link rel="stylesheet" href="landsat_resources/css/akickingwheel.css" type="text/css" />
   <script src="../Build/Cesium/Cesium.js"></script>
   <style>
       @import url(../Build/Cesium/Widgets/widgets.css);
@@ -32,35 +36,69 @@
   </style>
 </head>
 <body>
-  <div id="cesiumContainer"></div>
+  <div class="md-modal md-effect-16" id="modal">
+    <div class="md-content">
+      <h3>Welcome</h3>
+      <div>
+        <p>Please enter your post code to begin your journey:</p>
+        <form id="form-postcode" action="/landsat_actions/begin" method="post">
+          <input type="text" id="postcode" name="postcode" />
+          <input id="btn-go" type="submit" value="Go!" />
+          <p id="msg-please-wait" style="display: none;">
+            Please wait. It can take a little while to create your journey.
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+  <!--button class="md-trigger" data-modal="modal-16">Blur</button-->
+  <div class="md-overlay"></div>
+
+  <div class="container">
+    <div id="cesiumContainer"></div>
+  </div>
+
+  <!-- classie.js by @desandro: https://github.com/desandro/classie -->
+  <script src="landsat_resources/js/classie.js"></script>
+  <!-- modalEffects.js by mary lou http://tympanus.net/codrops/2013/06/25/nifty-modal-window-effects/ -->
+  <script src="landsat_resources/js/modalEffects.js"></script>
+  <script src="landsat_resources/js/jquery-1.11.1.js"></script>
+
   <script>
     var viewer = new Cesium.Viewer('cesiumContainer');
     var landsat_layers = new Cesium.ImageryLayerCollection();
     
-    window.url_list1 = [ { url: 'landsat_images/LS5_TM_NBAR_P54_GANBAR01-002_095_082_19860817.png',
-                        date_recorded: '1986-08-17',
-                        bbox: [ 141.9367, -32.8835, 142.4734, -32.497 ] },
-                      { url: 'landsat_images/LS5_TM_NBAR_P54_GANBAR01-002_095_083_19860817.png',
-                        date_recorded: '1986-08-17',
-                        bbox: [ 141.9367, -32.8835, 142.4734, -32.497 ] },
-                      { url: 'landsat_images/LS5_TM_NBAR_P54_GANBAR01-002_096_082_19870523.png',
-                        date_recorded: '1987-05-23',
-                        bbox: [ 141.9367, -32.8835, 142.4734, -32.497 ] },
-                      { url: 'landsat_images/LS5_TM_NBAR_P54_GANBAR01-002_096_083_19870523.png',
-                        date_recorded: '1987-05-23',
-                        bbox: [ 141.9367, -32.8835, 142.4734, -32.497 ] },
-                      { url: 'landsat_images/LS5_TM_NBAR_P54_GANBAR01-002_096_082_19870912.png',
-                        date_recorded: '1987-09-12',
-                        bbox: [ 141.9367, -32.8835, 142.4734, -32.497 ] } ];
+    // window.url_list1 = [ { url: 'landsat_images/LS5_TM_NBAR_P54_GANBAR01-002_095_082_19860817.png',
+    //                     date_recorded: '1986-08-17',
+    //                     bbox: [ 141.9367, -32.8835, 142.4734, -32.497 ] },
+    //                   { url: 'landsat_images/LS5_TM_NBAR_P54_GANBAR01-002_095_083_19860817.png',
+    //                     date_recorded: '1986-08-17',
+    //                     bbox: [ 141.9367, -32.8835, 142.4734, -32.497 ] },
+    //                   { url: 'landsat_images/LS5_TM_NBAR_P54_GANBAR01-002_096_082_19870523.png',
+    //                     date_recorded: '1987-05-23',
+    //                     bbox: [ 141.9367, -32.8835, 142.4734, -32.497 ] },
+    //                   { url: 'landsat_images/LS5_TM_NBAR_P54_GANBAR01-002_096_083_19870523.png',
+    //                     date_recorded: '1987-05-23',
+    //                     bbox: [ 141.9367, -32.8835, 142.4734, -32.497 ] },
+    //                   { url: 'landsat_images/LS5_TM_NBAR_P54_GANBAR01-002_096_082_19870912.png',
+    //                     date_recorded: '1987-09-12',
+    //                     bbox: [ 141.9367, -32.8835, 142.4734, -32.497 ] } ];
+
+
+
 
     function changeLandsatLayers(url_list) {
+        console.log('in changeLandsatLayers');
+        console.log(url_list);
+        window.url_list1 = url_list;
         var destroyRemovedLayers = true;
         landsat_layers.removeAll(destroyRemovedLayers);
         var min_date = Cesium.JulianDate.fromIso8601("9999-01-25"); // Some time in the distant future
         var max_date = Cesium.JulianDate.fromIso8601("1500-01-25"); // Some time before landsat
 
-        for (var i=0; i<url_list.length; i++)
-        {
+        for (var i=0; i<url_list.length; i++) {
+          something = url_list;
+          console.log(url_list[i]);
             var rectangle = Cesium.Rectangle.fromDegrees(url_list[i]["bbox"][0],
                                                         url_list[i]["bbox"][1],
                                                         url_list[i]["bbox"][2],
@@ -87,6 +125,14 @@
             }
         }
 
+        viewer.timeline.addEventListener('settime', function(event) {
+            timeChanged(event);
+            });
+
+        viewer.clock.onTick.addEventListener(function(event) {
+            timeChanged(event);
+            });
+
         // Set time
         viewer.clock.startTime = min_date;
         viewer.clock.currentTime = min_date;
@@ -94,9 +140,11 @@
         viewer.clock.multiplier = 10000000.0;
         viewer.timeline.updateFromClock();    
         viewer.timeline.zoomTo(viewer.clock.startTime, viewer.clock.stopTime);
+
+
     }
 
-    changeLandsatLayers(url_list1);
+    //changeLandsatLayers(url_list1);
 
     // Look at Australia: NE -28.157021, 153.638824. SW -37.505032, 140.999283.
     var west = Cesium.Math.toRadians(108);
@@ -124,14 +172,87 @@
         }
     }
 
-    viewer.timeline.addEventListener('settime', function(event) {
-        timeChanged(event);
-        });
+    // viewer.timeline.addEventListener('settime', function(event) {
+    //     timeChanged(event);
+    //     });
 
-    viewer.clock.onTick.addEventListener(function(event) {
-        timeChanged(event);
+    // viewer.clock.onTick.addEventListener(function(event) {
+    //     timeChanged(event);
+    //     });
+
+    /*  Modal form code */
+
+    var polyfilter_scriptpath = '/js/';
+    var postcode_re = /[0-9]{3,4}$/
+
+    $(document).ready(function() {
+      var modal = document.querySelector('#modal');
+      classie.add(modal, 'md-show');
+      classie.add(document.documentElement, 'md-effect-16');
+    });
+
+    $(window).load(function() {
+      $('#postcode').focus();
+    });
+
+    $('#form-postcode').submit(function(e, f) {
+      var post_code = $('#postcode').val();
+      console.log('go');
+      if (!post_code.match(postcode_re)) {
+        alert('You must enter a valid postcode of 3 to 4 numbers.');
+      } else {
+        console.log($('#form-postcode').attr('action'));
+        $.ajax({
+          type: 'GET'
+        , url: $('#form-postcode').attr('action')
+        , data: {postcode: post_code}
+        , crossDomain: false
+        , success: function(response, status, xhr) {
+            var response_json = JSON.parse(response);
+
+            $('#btn-go').hide();
+            $('#msg-please-wait').show();
+
+            console.log('Submitted: ' + response_json.id);
+            check_status(response_json.id);
+          }
+        , error: function(response, status, error) {
+            console.log("An error occurred. We are unable to start your journey.");
+          }
         });
+      }
+      e.stopPropagation();
+      return false;
+    });
+
+    function check_status(id) {
+      $.ajax({
+        type: 'GET'
+      , url: '/landsat_actions/get_processing_status'
+      , data: {id: id}
+      , crossDomain: false
+      , success: function(response, status, xhr) {
+          var response_json = JSON.parse(response);
+          if (response_json.status === 'COMPLETE') {
+            var modal = document.querySelector('#modal');
+            classie.remove(modal, 'md-show');
+            classie.remove(document.documentElement, 'md-effect-16');
+            changeLandsatLayers(JSON.parse(response_json.data));
+          } else {
+            setTimeout(function() {
+              check_status(id);
+            }, 500);
+          }
+        }
+      , error: function(response, status, error) {
+          console.log("An error occurred. We are unable to start your journey.");
+        }
+      });
+    }
         
   </script>
+
+  <script src="landsat_resources/js/cssParser.js"></script>
+  <script src="landsat_resources/js/css-filters-polyfill.js"></script>
 </body>
 </html>
