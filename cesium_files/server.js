@@ -110,10 +110,10 @@ var wms_url_template = '${WMS_URL}?layers=FalseColour741&styles=&srs=EPSG:4326&f
 
       var pc_info = post_codes[parseInt(post_code)];
       
-      var lc_lon = parseFloat(parseFloat(pc_info.lon).toFixed(4));
-      var lc_lat = parseFloat(parseFloat(pc_info.lat).toFixed(4));
-      var uc_lon = parseFloat(parseFloat(pc_info.lon).toFixed(4)) + 1.0;
-      var uc_lat = parseFloat(parseFloat(pc_info.lat).toFixed(4)) + 0.5;
+      var lc_lon = parseFloat(parseFloat(pc_info.lon).toFixed(4)) - 0.05;
+      var lc_lat = parseFloat(parseFloat(pc_info.lat).toFixed(4)) - 0.025;
+      var uc_lon = parseFloat(parseFloat(pc_info.lon).toFixed(4)) + 0.05;
+      var uc_lat = parseFloat(parseFloat(pc_info.lat).toFixed(4)) + 0.025;
 
       var lower_corner = '' + lc_lon + ' ' + lc_lat;
       var upper_corner = '' + uc_lon + ' ' + uc_lat;

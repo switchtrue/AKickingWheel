@@ -43,7 +43,7 @@
       <div>
         <p>Please enter your post code to begin your journey:</p>
         <form id="form-postcode" action="/landsat_actions/begin" method="post">
-          <input type="text" id="postcode" name="postcode" />
+          <input type="text" id="postcode" name="postcode" autocomplete="off" />
           <input id="btn-go" type="submit" value="Go!" />
           <p id="msg-please-wait" style="display: none;">
             Please wait. It can take a little while to create your journey.
@@ -79,8 +79,23 @@
                             }),
                         });
     var landsat_layers = new Cesium.ImageryLayerCollection();
-    
 
+    function startAnimate() {
+      viewer.clock.shouldAnimate = true;
+      viewer.timeline.updateFromClock();
+    }
+
+    function gotoRectangle(bbox) {
+        viewer.scene.primitives.removeAll();
+        viewer.scene.tweens.removeAll();
+
+        viewer.scene.camera.flyToRectangle({
+            destination : Cesium.Rectangle.fromDegrees(bbox[0], bbox[1], bbox[2], bbox[3]),
+            duration : 3.0,
+            complete : startAnimate,
+        });
+    }
+    
     function changeLandsatLayers(url_list) {
         console.log('in changeLandsatLayers');
         console.log(url_list);
@@ -89,6 +104,8 @@
         landsat_layers.removeAll(destroyRemovedLayers);
         var min_date = Cesium.JulianDate.fromIso8601("9999-01-25"); // Some time in the distant future
         var max_date = Cesium.JulianDate.fromIso8601("1500-01-25"); // Some time before landsat
+
+        var finalBBox;
 
         for (var i=0; i<url_list.length; i++) {
           something = url_list;
@@ -117,6 +134,11 @@
             {
                 max_date = Cesium.JulianDate.fromIso8601(url_list[i]["date_recorded"]);
             }
+
+            if(i == url_list.length - 1)
+            {
+              finalBBox = url_list[i]["bbox"];
+            }
         }
 
         viewer.timeline.addEventListener('settime', function(event) {
@@ -133,8 +155,10 @@
         viewer.clock.stopTime = max_date;
         viewer.clock.shouldAnimate = false;
         viewer.clock.multiplier = 10000000.0;
-        viewer.timeline.updateFromClock();    
+        viewer.timeline.updateFromClock();
         viewer.timeline.zoomTo(viewer.clock.startTime, viewer.clock.stopTime);
+
+        gotoRectangle(finalBBox);
     }
 
     // changeLandsatLayers(url_list1);
