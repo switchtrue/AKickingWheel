@@ -48,6 +48,7 @@
           <p id="msg-please-wait" style="display: none;">
             Please wait. It can take a little while to create your journey.
           </p>
+          <p id="msg-loading"></p>
         </form>
       </div>
     </div>
@@ -79,7 +80,17 @@
                             }),
                         });
     var landsat_layers = new Cesium.ImageryLayerCollection();
-    
+
+    var loading_messages = [
+      '...preparing for takeoff...',
+      '...runway clear...',
+      '...checking flight systems...',
+      '...buckle your seat belts...',
+      '...time systems - OK...',
+      '...full speed ahead...',
+      '...its the journey that counts, not the destination...'
+    ]
+
 
     function changeLandsatLayers(url_list) {
         console.log('in changeLandsatLayers');
@@ -194,6 +205,7 @@
             check_status(response_json.id);
           }
         , error: function(response, status, error) {
+            $('#msg-please-wait').text("An error occurred. We are unable to start your journey.");
             console.log("An error occurred. We are unable to start your journey.");
           }
         });
@@ -201,6 +213,8 @@
       e.stopPropagation();
       return false;
     });
+
+    var check_counter = 0;
 
     function check_status(id) {
       $.ajax({
@@ -216,6 +230,13 @@
             classie.remove(document.documentElement, 'md-effect-16');
             changeLandsatLayers(JSON.parse(response_json.data));
           } else {
+            if (check_counter % 5 == 0) {
+              var i = (Math.random() * 100) % loading_messages.length;
+              $('#msg-loading').text(loading_messages[parseInt(i)]);
+            }
+
+            check_counter++;
+
             setTimeout(function() {
               check_status(id);
             }, 500);
