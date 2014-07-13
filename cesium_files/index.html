@@ -246,32 +246,34 @@
       $('#postcode').focus();
     });
 
+    var submitted = false;
+
     $('#form-postcode').submit(function(e, f) {
-      var post_code = $('#postcode').val();
-      console.log('go');
-      if (!post_code.match(postcode_re)) {
-        alert('You must enter a valid postcode of 3 to 4 numbers.');
-      } else {
-        console.log($('#form-postcode').attr('action'));
-        $.ajax({
-          type: 'GET'
-        , url: $('#form-postcode').attr('action')
-        , data: {postcode: post_code}
-        , crossDomain: false
-        , success: function(response, status, xhr) {
-            var response_json = JSON.parse(response);
-
-            $('#btn-go').hide();
-            $('#msg-please-wait').show();
-
-            console.log('Submitted: ' + response_json.id);
-            check_status(response_json.id);
-          }
-        , error: function(response, status, error) {
-            $('#msg-please-wait').text("An error occurred. We are unable to start your journey.");
-            console.log("An error occurred. We are unable to start your journey.");
-          }
-        });
+      if (!submitted) {
+        var post_code = $('#postcode').val();
+        if (!post_code.match(postcode_re)) {
+          alert('You must enter a valid postcode of 3 to 4 numbers.');
+        } else {
+          submitted = true;
+          $('#btn-go').attr('disabled','disabled');
+          console.log($('#form-postcode').attr('action'));
+          $.ajax({
+            type: 'GET'
+          , url: $('#form-postcode').attr('action')
+          , data: {postcode: post_code}
+          , crossDomain: false
+          , success: function(response, status, xhr) {
+              var response_json = JSON.parse(response);
+              $('#msg-please-wait').show();
+              console.log('Submitted: ' + response_json.id);
+              check_status(response_json.id);
+            }
+          , error: function(response, status, error) {
+              $('#msg-please-wait').text("An error occurred. We are unable to start your journey.");
+              console.log("An error occurred. We are unable to start your journey.");
+            }
+          });
+        }
       }
       e.stopPropagation();
       return false;
@@ -292,6 +294,7 @@
             classie.remove(modal, 'md-show');
             classie.remove(document.documentElement, 'md-effect-16');
             changeLandsatLayers(JSON.parse(response_json.data));
+            console.log(JSON.parse(response_json.data));
           } else {
             if (check_counter % 5 == 0) {
               var i = (Math.random() * 100) % loading_messages.length;
