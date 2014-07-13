@@ -10,8 +10,8 @@ var default_directory = 'landsat_images/';
 
 var image_list = {};
 
-var max_records = 50;
-var max_images_on_map = 5;
+var max_records = 100;
+var max_images_on_map = 100;
 var image_height = 373;
 var image_width = 518;
 var get_records_body_template = '<?xml version="1.0" encoding="UTF-8"?><csw:GetRecords xmlns:gml="http://www.opengis.net/gml" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" outputSchema="http://www.opengis.net/cat/csw/2.0.2" outputFormat="application/xml" version="2.0.2" service="CSW" resultType="results" maxRecords="${MAX_RECORDS}" nextRecord="0" xsi:schemaLocation="http://www.opengis.net/cat/csw/2.0.2http://schemas.opengis.net/csw/2.0.2/CSW-discovery.xsd"><csw:Query typeNames="csw:Record"><csw:ElementSetName>full</csw:ElementSetName><csw:Constraint version="1.1.0"><ogc:Filter><ogc:And><ogc:PropertyIsLike escape="\" singleChar="_" wildCard="%"><ogc:PropertyName>Title</ogc:PropertyName><ogc:Literal>%Landsat%</ogc:Literal></ogc:PropertyIsLike><ogc:BBOX><ogc:PropertyName>ows:BoundingBox</ogc:PropertyName><gml:Envelope><gml:lowerCorner>${LOWER_CORNER}</gml:lowerCorner> <gml:upperCorner>${UPPER_CORNER}</gml:upperCorner></gml:Envelope></ogc:BBOX></ogc:And></ogc:Filter></csw:Constraint><ogc:SortBy><ogc:SortProperty><ogc:PropertyName>apiso:TempExtent_begin</ogc:PropertyName><ogc:SortOrder>ASC</ogc:SortOrder></ogc:SortProperty></ogc:SortBy></csw:Query></csw:GetRecords>';
@@ -201,7 +201,6 @@ var wms_url_template = '${WMS_URL}?layers=FalseColour741&styles=&srs=EPSG:4326&f
 
               image_list[id].push(image);
 
-              console.log('current: i: ' + i + ', len: ' + records.length);
               if (i == records.length - 1) {
                 console.log('About to do callback');
                 console.log(gr_callback);
