@@ -1,3 +1,7 @@
+var abs_path = '/Users/michael/programming/govhack/govhack2014/ve/Cesium-b30/';
+var run_port = 8080;
+var run_host = 'localhost';
+
 var host_name = 'eos.ga.gov.au';
 var host_port = 80;
 var host_path = '/geonetwork/srv/eng/csw';
@@ -326,8 +330,6 @@ var wms_url_template = '${WMS_URL}?layers=FalseColour741&styles=&srs=EPSG:4326&f
                 var hack_list = [];
                 var dates_found = {};
 
-                var abs_path = '/Users/michael/programming/govhack/govhack2014/ve/Cesium-b30/';
-
                 var counter = 0;
 
                 for (var i in status) {
@@ -344,6 +346,7 @@ var wms_url_template = '${WMS_URL}?layers=FalseColour741&styles=&srs=EPSG:4326&f
                       '-gravity', 'center',
                       '-quality', 100,
                       abs_path + image_data['url'],
+                      abs_path + image_data['url'], // Hack to ensure that there are always at least two images to composite together.
                     ];
 
                     console.log('Creating image: ' + abs_path + image_data['url']);
@@ -354,13 +357,15 @@ var wms_url_template = '${WMS_URL}?layers=FalseColour741&styles=&srs=EPSG:4326&f
                       }
                     }
 
-                    command.push(abs_path + 'landsat_images/composite_' + image_data['date_recorded'] + '.png');
+                    var composite_file_name = 'landsat_images/composite_' + image_data['date_recorded'] + '.png';
+                    command.push(abs_path + composite_file_name);
+
                     exec(command.join(' '), function(err, stdout, stderr) {
                       if (err) console.log(err);
                     });
                     
                     hack_list.push({
-                      url: image_data['url'],
+                      url: composite_file_name,
                       date_recorded: image_data['date_recorded'],
                       bbox: image_data['bbox']
                     });
@@ -375,7 +380,7 @@ var wms_url_template = '${WMS_URL}?layers=FalseColour741&styles=&srs=EPSG:4326&f
         }
     });
 
-    app.listen(argv.port, argv.public ? undefined : 'localhost');
+    app.listen(run_port, run_host);
 
     console.log('Cesium development server running.  Connect to http://localhost:%d.', argv.port);
 })();
