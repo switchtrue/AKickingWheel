@@ -4,7 +4,22 @@
 
 #form-postcode input[type="text"] {
   font-size: 1.5em;
-  width: 100%;
+  width: 80%;
   border: none;
   background: rgba(256, 256, 256, 0.4);
+}
+
+#form-postcode input[type="submit"] {
+  width: 19%;
+  font-size: 1em;
+  height: 35px;
+  border: none;
+  background: rgba(0, 0, 0, 0.2); 
+  position: relative;
+  top: -5px;
+  color: #fff;
+}
+
+#form-postcode input[disabled="disabled"] {
+  background: #777; 
 }
