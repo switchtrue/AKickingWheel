@@ -290,12 +290,14 @@
       , success: function(response, status, xhr) {
           var response_json = JSON.parse(response);
           if (response_json.status === 'COMPLETE') {
+            console.log(JSON.parse(response).status);
             var modal = document.querySelector('#modal');
             classie.remove(modal, 'md-show');
             classie.remove(document.documentElement, 'md-effect-16');
             changeLandsatLayers(JSON.parse(response_json.data));
             console.log(JSON.parse(response_json.data));
           } else {
+            console.log(JSON.parse(response).status);
             if (check_counter % 5 == 0) {
               var i = (Math.random() * 100) % loading_messages.length;
               $('#msg-loading').text(loading_messages[parseInt(i)]);

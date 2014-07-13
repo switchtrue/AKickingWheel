@@ -6,9 +6,12 @@ var default_directory = 'landsat_images/';
 
 var image_list = {};
 
-var max_records = 500;
+var max_records = 50;
+var max_images_on_map = 5;
+var image_height = 373;
+var image_width = 518;
 var get_records_body_template = '<?xml version="1.0" encoding="UTF-8"?><csw:GetRecords xmlns:gml="http://www.opengis.net/gml" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" outputSchema="http://www.opengis.net/cat/csw/2.0.2" outputFormat="application/xml" version="2.0.2" service="CSW" resultType="results" maxRecords="${MAX_RECORDS}" nextRecord="0" xsi:schemaLocation="http://www.opengis.net/cat/csw/2.0.2http://schemas.opengis.net/csw/2.0.2/CSW-discovery.xsd"><csw:Query typeNames="csw:Record"><csw:ElementSetName>full</csw:ElementSetName><csw:Constraint version="1.1.0"><ogc:Filter><ogc:And><ogc:PropertyIsLike escape="\" singleChar="_" wildCard="%"><ogc:PropertyName>Title</ogc:PropertyName><ogc:Literal>%Landsat%</ogc:Literal></ogc:PropertyIsLike><ogc:BBOX><ogc:PropertyName>ows:BoundingBox</ogc:PropertyName><gml:Envelope><gml:lowerCorner>${LOWER_CORNER}</gml:lowerCorner> <gml:upperCorner>${UPPER_CORNER}</gml:upperCorner></gml:Envelope></ogc:BBOX></ogc:And></ogc:Filter></csw:Constraint><ogc:SortBy><ogc:SortProperty><ogc:PropertyName>apiso:TempExtent_begin</ogc:PropertyName><ogc:SortOrder>ASC</ogc:SortOrder></ogc:SortProperty></ogc:SortBy></csw:Query></csw:GetRecords>';
-var wms_url_template = '${WMS_URL}?layers=FalseColour741&styles=&srs=EPSG:4326&format=image/png&request=GetMap&bgcolor=0xFFFFFF&height=746&width=1036&version=1.1.1&bbox=${BBOX}&exceptions=application/vnd.ogc.se_xml&transparent=FALSE';
+var wms_url_template = '${WMS_URL}?layers=FalseColour741&styles=&srs=EPSG:4326&format=image/png&request=GetMap&bgcolor=0xFFFFFF&height=${HEIGHT}&width=${WIDTH}&version=1.1.1&bbox=${BBOX}&exceptions=application/vnd.ogc.se_xml&transparent=FALSE';
 
 (function() {
     "use strict";
@@ -21,6 +24,10 @@ var wms_url_template = '${WMS_URL}?layers=FalseColour741&styles=&srs=EPSG:4326&f
     var request = require('request');
     var fs = require('fs');
     var http = require('http');
+    var gm = require('gm');
+    var imageMagick = gm.subClass({ imageMagick: true });
+    // Require our module dependencies
+    var exec = require('child_process').exec;
 
     var yargs = require('yargs').options({
         'port' : {
@@ -183,6 +190,8 @@ var wms_url_template = '${WMS_URL}?layers=FalseColour741&styles=&srs=EPSG:4326&f
               var record_wms_url = wms_url_template;
               record_wms_url = record_wms_url.replace('${WMS_URL}', wms_url);
               record_wms_url = record_wms_url.replace('${BBOX}', '' + lc_lon + ',' + lc_lat + ',' + uc_lon + ',' + uc_lat);
+              record_wms_url = record_wms_url.replace('${WIDTH}', image_width);
+              record_wms_url = record_wms_url.replace('${HEIGHT}', image_height);
 
               get_map(record_wms_url, file_name);
 
@@ -299,6 +308,11 @@ var wms_url_template = '${WMS_URL}?layers=FalseColour741&styles=&srs=EPSG:4326&f
         }
     });
 
+    gm.prototype.compose = function(operator) {
+      this.command('composite'); // need to use composite over the node gm default convert
+      return this.out("-compose", operator);
+    };
+
     app.get('/landsat_actions/get_processing_status', function(req, res, next) {
         if (req.query.id) {
             var landsat_id = req.query.id;
@@ -308,7 +322,53 @@ var wms_url_template = '${WMS_URL}?layers=FalseColour741&styles=&srs=EPSG:4326&f
             } else {
                 delete landsat_processing_status[landsat_id];
                 delete image_list[landsat_id];
-                res.send(200, JSON.stringify({status: "COMPLETE", data: JSON.stringify(status)}));
+
+                var hack_list = [];
+                var dates_found = {};
+
+                var abs_path = '/Users/michael/programming/govhack/govhack2014/ve/Cesium-b30/';
+
+                var counter = 0;
+
+                for (var i in status) {
+                  counter++;
+                  if (counter > max_images_on_map) {
+                    continue;
+                  }
+                  var image_data = status[i];
+                  if (dates_found[image_data['date_recorded']] === undefined) {
+                    dates_found[image_data['date_recorded']] = true;
+                    
+                    var command = [
+                      'composite',
+                      '-gravity', 'center',
+                      '-quality', 100,
+                      abs_path + image_data['url'],
+                    ];
+
+                    console.log('Creating image: ' + abs_path + image_data['url']);
+                    for (var j in status) {
+                      // If same date, but not the same image...
+                      if (status[j]['date_recorded'] === image_data['date_recorded'] && status[j]['url'] !== image_data['url']) {
+                        command.push(abs_path + status[j]['url']);
+                      }
+                    }
+
+                    command.push(abs_path + 'landsat_images/composite_' + image_data['date_recorded'] + '.png');
+                    exec(command.join(' '), function(err, stdout, stderr) {
+                      if (err) console.log(err);
+                    });
+                    
+                    hack_list.push({
+                      url: image_data['url'],
+                      date_recorded: image_data['date_recorded'],
+                      bbox: image_data['bbox']
+                    });
+
+                  }
+                }
+
+                res.send(200, JSON.stringify({status: "COMPLETE", data: JSON.stringify(hack_list)}));
             }
         } else {
             res.send(500, JSON.stringify({status: "ERROR"}));
