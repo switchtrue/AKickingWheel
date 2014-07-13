@@ -533,11 +533,13 @@ perspective effects (not including the modals and the overlay).
 	background: rgba(128,128,128,0.3);
 }
 
+/*
 .md-show.md-effect-16 ~ .container {
 	-webkit-filter: blur(3px);
 	-moz-filter: blur(3px);
 	filter: blur(3px);
 }
+*/
 
 .md-effect-16 .md-content {
 	-webkit-transform: translateY(-5%);

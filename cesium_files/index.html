@@ -74,12 +74,11 @@
                             infoBox : false,
                             navigationHelpButton : false,
                             navigationInstructionsInitiallyVisible : false,
-                            sceneModePicker : false, 
-                            imageryProvider : new Cesium.ArcGisMapServerImageryProvider({
-                                    url : 'http://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer'
-                            }),
+                            sceneModePicker : false
+                            //imageryProvider : new Cesium.ArcGisMapServerImageryProvider({
+                            //        url : 'http://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer'
+                            //}),
                         });
-    var landsat_layers = new Cesium.ImageryLayerCollection();
 
     function setupGoAgainButton() {
       var toolbars = document.getElementsByClassName('cesium-viewer-toolbar');
@@ -136,14 +135,21 @@
                                                          url_list[i]["bbox"][2],
                                                          url_list[i]["bbox"][3]);
 
-            var landsat_layer = viewer.scene.imageryLayers.addImageryProvider(new Cesium.SingleTileImageryProvider({
-                            url : url_list[i]["url"],
-                            rectangle : rectangle
-                          }));
-            landsat_layer.show = true;
-            landsat_layer.alpha = 0;
-            url_list[i]["layer"] = landsat_layer;
-            landsat_layers.add(landsat_layer);
+            if (i == 0) 
+            {
+                var tile_provider = new Cesium.SingleTileImageryProvider({
+                                        url : url_list[i]["url"],
+                                        rectangle : rectangle
+                                    })
+                var landsat_layer = viewer.scene.imageryLayers.addImageryProvider(tile_provider);
+                window.current_index = i;
+                landsat_layer.show = true;
+                landsat_layer.alpha = 0;
+
+                window.tile_provider = tile_provider;
+                window.landsat_layer = landsat_layer;
+            }
+            url_list[i]["alpha"] = 0;
             // Work out the date range the images cover, so that we can display only that range on the 
             // time slider.
             if (Cesium.JulianDate.lessThan(Cesium.JulianDate.fromIso8601(url_list[i]["date_recorded"]), min_date)) 
@@ -189,14 +195,23 @@
         {
             var landsat_time = Cesium.JulianDate.fromIso8601(window.url_list1[i]["date_recorded"]);
             var eps = Math.abs(Cesium.JulianDate.getDaysDifference(landsat_time, now));
-            // This governs how fast the image will fade in and out. Higher epsilon = longer fade time.
-            eps_test = 100.0;
-            var clamped = Cesium.Math.clamp(eps, 0.0, eps_test);
-            var normed = clamped/eps_test;
-            if (window.url_list1[i]["layer"])
+            var eps_thresh = 12.0;
+            eps = Cesium.Math.clamp(eps, 0.0, eps_thresh);
+            if (eps < eps_thresh && window.current_index != i) 
             {
-                window.url_list1[i]["layer"].alpha = 1 - normed;
-            } 
+                var rectangle = Cesium.Rectangle.fromDegrees(window.url_list1[i]["bbox"][0],
+                                                             window.url_list1[i]["bbox"][1],
+                                                             window.url_list1[i]["bbox"][2],
+                                                             window.url_list1[i]["bbox"][3]);
+                viewer.scene.imageryLayers.remove(window.landsat_layer, true);
+                var tile_provider = new Cesium.SingleTileImageryProvider({
+                                        url : window.url_list1[i]["url"],
+                                        rectangle : rectangle
+                                    })
+                window.current_index = i;
+                var landsat_layer = viewer.scene.imageryLayers.addImageryProvider(tile_provider);
+                window.landsat_layer = landsat_layer;
+            }
         }
     }
 
